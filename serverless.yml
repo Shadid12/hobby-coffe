@@ -5,7 +5,21 @@ provider:
   runtime: nodejs10.x
   stage: dev
   region: us-east-1
-  
+
+plugins:
+  - serverless-offline
+  - serverless-bundle
+
+functions:
+  get-products:
+    handler: ./functions/get-products.main
+    role: ReadProducts
+    events:
+      - http:
+          path: products
+          method: get
+          cors: true
+
 resources:
   Resources:
     # Create Products Table
@@ -25,3 +39,29 @@ resources:
             KeyType: RANGE
         # Set the capacity to auto-scale
         BillingMode: PAY_PER_REQUEST
+    # Lambda Permission Policy
+    ReadProducts:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: GetProductsPermission
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: GetProductsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:DescribeTable
+                    - dynamodb:Scan
+                    - dynamodb:Query
+                  Resource:
+                    - "Fn::GetAtt": [ ProductsTable, Arn ]
+                
