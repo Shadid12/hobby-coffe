@@ -5,7 +5,7 @@ provider:
   runtime: nodejs10.x
   stage: dev
   region: us-east-1
-
+  
 resources:
   Resources:
     # Create Products Table
@@ -25,4 +25,3 @@ resources:
             KeyType: RANGE
         # Set the capacity to auto-scale
         BillingMode: PAY_PER_REQUEST
-
