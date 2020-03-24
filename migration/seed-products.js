@@ -3,14 +3,23 @@ const uuid = require('uuid')
 
 AWS.config.region = 'us-east-1'
 const dynamodb = new AWS.DynamoDB.DocumentClient({
-    accessKeyId: 'AKIAVINEMP4JGRMI5TEZ',
-    secretAccessKey: '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'
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 })
 
 let params = {
-    TableName: 'products'
+    TableName: 'orders',
+    Item: {
+        userId: 'shadid',
+        orderId: uuid.v1(),
+        total: 11,
+        products: [
+            'shadid',
+            'kkdwll'
+        ]
+    }
 }
-dynamodb.scan(params).promise().then(res => {
+dynamodb.put(params).promise().then(res => {
     console.log('DONEEE', res);
 })
 

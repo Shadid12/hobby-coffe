@@ -20,6 +20,15 @@ functions:
           method: get
           cors: true
 
+  create-order:
+    handler: ./functions/create-order.main
+    role: CustomerRole
+    events:
+      - http:
+          path: orders
+          method: post
+          cors: true
+
 resources:
   Resources:
     # Create Products Table
@@ -36,6 +45,23 @@ resources:
           - AttributeName: productId
             KeyType: HASH
           - AttributeName: price
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+    # Create Order Table
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: orders
+        AttributeDefinitions:
+          - AttributeName: orderId
+            AttributeType: S
+          - AttributeName: total
+            AttributeType: N
+        KeySchema:
+          - AttributeName: orderId
+            KeyType: HASH
+          - AttributeName: total
             KeyType: RANGE
         # Set the capacity to auto-scale
         BillingMode: PAY_PER_REQUEST
@@ -64,4 +90,30 @@ resources:
                     - dynamodb:Query
                   Resource:
                     - "Fn::GetAtt": [ ProductsTable, Arn ]
+    CustomerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: OrdersPermission
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: OrdersPermissionPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:DescribeTable
+                    - dynamodb:Scan
+                    - dynamodb:Query
+                    - dynamodb:Put
+                    - dynamodb:Delete
+                  Resource:
+                    - "Fn::GetAtt": [ OrdersTable, Arn ]
                 

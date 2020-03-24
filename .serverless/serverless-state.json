@@ -76,6 +76,12 @@
               "LogGroupName": "/aws/lambda/hobby-coffee-dev-get-products"
             }
           },
+          "CreateDashorderLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/hobby-coffee-dev-create-order"
+            }
+          },
           "GetDashproductsLambdaFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
@@ -83,7 +89,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/hobby-coffee/dev/1584904995233-2020-03-22T19:23:15.233Z/hobby-coffee.zip"
+                "S3Key": "serverless/hobby-coffee/dev/1584940244639-2020-03-23T05:10:44.639Z/hobby-coffee.zip"
               },
               "FunctionName": "hobby-coffee-dev-get-products",
               "Handler": "./functions/get-products.main",
@@ -102,14 +108,50 @@
               "ReadProducts"
             ]
           },
-          "GetDashproductsLambdaVersion1eIbIhTL4c0qrW53ZtNIeQZYt8kzCIGjqOKP268": {
+          "GetDashproductsLambdaVersionOGgnoDzISiwalmsD98WMwmwbrFItII6E8V1PCZ77I": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GetDashproductsLambdaFunction"
               },
-              "CodeSha256": "nnkpjP4/1jUYT4eTzTKqzVNApkBHcRudVnP7sNPa9mc="
+              "CodeSha256": "8Nmj+HPr92OEx4igsznNnD4KbY5xH4FHv1aU8ujEbv8="
+            }
+          },
+          "CreateDashorderLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/hobby-coffee/dev/1584940244639-2020-03-23T05:10:44.639Z/hobby-coffee.zip"
+              },
+              "FunctionName": "hobby-coffee-dev-create-order",
+              "Handler": "./functions/create-order.main",
+              "MemorySize": 1024,
+              "Role": {
+                "Fn::GetAtt": [
+                  "CustomerRole",
+                  "Arn"
+                ]
+              },
+              "Runtime": "nodejs10.x",
+              "Timeout": 6
+            },
+            "DependsOn": [
+              "CreateDashorderLogGroup",
+              "CustomerRole"
+            ]
+          },
+          "CreateDashorderLambdaVersionn0D7eONMnEOrqwr85KXg3yvAk538Cz3CoLQn5wpYiw": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "CreateDashorderLambdaFunction"
+              },
+              "CodeSha256": "8Nmj+HPr92OEx4igsznNnD4KbY5xH4FHv1aU8ujEbv8="
             }
           },
           "ApiGatewayRestApi": {
@@ -134,6 +176,21 @@
                 ]
               },
               "PathPart": "products",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayResourceOrders": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "orders",
               "RestApiId": {
                 "Ref": "ApiGatewayRestApi"
               }
@@ -184,6 +241,51 @@
               }
             }
           },
+          "ApiGatewayMethodOrdersOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": "#set($origin = $input.params(\"Origin\"))\n#if($origin == \"\") #set($origin = $input.params(\"origin\")) #end\n#if($origin.matches(\".*\")) #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin) #end"
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceOrders"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
           "ApiGatewayMethodProductsGet": {
             "Type": "AWS::ApiGateway::Method",
             "Properties": {
@@ -227,7 +329,50 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1584904958982": {
+          "ApiGatewayMethodOrdersPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceOrders"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "CreateDashorderLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            }
+          },
+          "ApiGatewayDeployment1584940215972": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -237,7 +382,9 @@
             },
             "DependsOn": [
               "ApiGatewayMethodProductsOptions",
-              "ApiGatewayMethodProductsGet"
+              "ApiGatewayMethodOrdersOptions",
+              "ApiGatewayMethodProductsGet",
+              "ApiGatewayMethodOrdersPost"
             ]
           },
           "GetDashproductsLambdaPermissionApiGateway": {
@@ -246,6 +393,43 @@
               "FunctionName": {
                 "Fn::GetAtt": [
                   "GetDashproductsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "CreateDashorderLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CreateDashorderLambdaFunction",
                   "Arn"
                 ]
               },
@@ -304,6 +488,33 @@
               "BillingMode": "PAY_PER_REQUEST"
             }
           },
+          "OrdersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "orders",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "orderId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "total",
+                  "AttributeType": "N"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "orderId",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "total",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          },
           "ReadProducts": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -349,6 +560,54 @@
                 }
               ]
             }
+          },
+          "CustomerRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "RoleName": "OrdersPermission",
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": "sts:AssumeRole"
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": "OrdersPermissionPolicy",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:DescribeTable",
+                          "dynamodb:Scan",
+                          "dynamodb:Query",
+                          "dynamodb:Put",
+                          "dynamodb:Delete"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "OrdersTable",
+                              "Arn"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
           }
         },
         "Outputs": {
@@ -360,7 +619,13 @@
           "GetDashproductsLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GetDashproductsLambdaVersion1eIbIhTL4c0qrW53ZtNIeQZYt8kzCIGjqOKP268"
+              "Ref": "GetDashproductsLambdaVersionOGgnoDzISiwalmsD98WMwmwbrFItII6E8V1PCZ77I"
+            }
+          },
+          "CreateDashorderLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "CreateDashorderLambdaVersionn0D7eONMnEOrqwr85KXg3yvAk538Cz3CoLQn5wpYiw"
             }
           },
           "ServiceEndpoint": {
@@ -516,7 +781,48 @@
         "timeout": 6,
         "runtime": "nodejs10.x",
         "vpc": {},
-        "versionLogicalId": "GetDashproductsLambdaVersion1eIbIhTL4c0qrW53ZtNIeQZYt8kzCIGjqOKP268"
+        "versionLogicalId": "GetDashproductsLambdaVersionOGgnoDzISiwalmsD98WMwmwbrFItII6E8V1PCZ77I"
+      },
+      "create-order": {
+        "handler": "./functions/create-order.main",
+        "role": "CustomerRole",
+        "events": [
+          {
+            "http": {
+              "path": "orders",
+              "method": "post",
+              "cors": {
+                "origins": [
+                  "*"
+                ],
+                "origin": "*",
+                "methods": [
+                  "OPTIONS",
+                  "POST"
+                ],
+                "headers": [
+                  "Content-Type",
+                  "X-Amz-Date",
+                  "Authorization",
+                  "X-Api-Key",
+                  "X-Amz-Security-Token",
+                  "X-Amz-User-Agent"
+                ],
+                "allowCredentials": false
+              },
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
+        "name": "hobby-coffee-dev-create-order",
+        "package": {
+          "artifact": ".serverless/hobby-coffee.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs10.x",
+        "vpc": {},
+        "versionLogicalId": "CreateDashorderLambdaVersionn0D7eONMnEOrqwr85KXg3yvAk538Cz3CoLQn5wpYiw"
       }
     },
     "resources": {
@@ -542,6 +848,33 @@
               },
               {
                 "AttributeName": "price",
+                "KeyType": "RANGE"
+              }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
+          }
+        },
+        "OrdersTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "orders",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "orderId",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "total",
+                "AttributeType": "N"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "orderId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "total",
                 "KeyType": "RANGE"
               }
             ],
@@ -593,6 +926,54 @@
               }
             ]
           }
+        },
+        "CustomerRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "RoleName": "OrdersPermission",
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com"
+                    ]
+                  },
+                  "Action": "sts:AssumeRole"
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": "OrdersPermissionPolicy",
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "dynamodb:DescribeTable",
+                        "dynamodb:Scan",
+                        "dynamodb:Query",
+                        "dynamodb:Put",
+                        "dynamodb:Delete"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "OrdersTable",
+                            "Arn"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
         }
       },
       "Outputs": {}
@@ -602,7 +983,7 @@
     "isDashboardMonitoringPreconfigured": false
   },
   "package": {
-    "artifactDirectoryName": "serverless/hobby-coffee/dev/1584904995233-2020-03-22T19:23:15.233Z",
+    "artifactDirectoryName": "serverless/hobby-coffee/dev/1584940244639-2020-03-23T05:10:44.639Z",
     "artifact": ""
   }
 }
